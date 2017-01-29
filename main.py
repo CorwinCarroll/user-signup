@@ -44,11 +44,6 @@ def valid_email(email):
 class Index(webapp2.RequestHandler):
     """ Handles requests coming in to '/' (the root of our site)
     """
-    # have_error = False
-    # user_name = ""
-    # password = ""
-    # verify_password = ""
-    # user_email = ""
 
     def get(self):
 
@@ -99,8 +94,6 @@ class Index(webapp2.RequestHandler):
         </form>
         """
 
-		# """.format(crossoff_options)
-
         # if we have an error, make a <p> to display it
         error = self.request.get("error")
         if error:
@@ -113,40 +106,29 @@ class Index(webapp2.RequestHandler):
         content = page_header + main_content + page_footer
         self.response.write(content)
 
-
-# class AddMovie(webapp2.RequestHandler):
-#     """ Handles requests coming in to '/add'
-#         e.g. www.flicklist.com/add
-#     """
-
     def post(self):
-        have_error = False
         username = self.request.get('username')
         password = self.request.get('password')
         verify = self.request.get('verify')
         email = self.request.get('email')
 
         if not valid_username(username):
-            params['error_username'] = "That's not a valid username."
-            have_error = True
+            error_username = "Your username is not vaild, please try again."
+            self.redirect("/?error=" + error_username)
 
-        if not valid_password(password):
-            params['error_password'] = "That wasn't a valid password."
-            have_error = True
-        elif password != verify:
-            params['error_verify'] = "Your passwords didn't match."
-            have_error = True
+        # if not valid_password(password):
+        #     error_password = "That wasn't a valid password."
+        #     self.redirect("/?error=" + error_password)
+
+        # elif password != verify:
+        #     error_verify = "Your passwords didn't match."
+        #     self.redirect("/?error=" + error_verify)
 
         if not valid_email(email):
-            params['error_email'] = "That's not a valid email."
-            have_error = True
-
-        if have_error:
-            self.redirect('/', **params)
-        else:
-            self.redirect('/welcome' + username)
-
-        sentence = "Welcome!"
+            error_email = "That's not a valid email."
+            self.redirect("/?error=" + error_email)
+           
+        sentence = "Welcome!" + username
         content = page_header + "<p>" + sentence + "</p>" + page_footer
         self.response.write(content)
 
