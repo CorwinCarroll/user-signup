@@ -1,140 +1,124 @@
-import re
-import cgi
-from string import letters
+import webapp2, re, cgi
 
-import webapp2
-
-# html boilerplate for the top of every page
 page_header = """
-<!DOCTYPE html>
 <html>
-<head>
-    <title>User Sign-Up</title>
-    <style type="text/css">
-        .error {
-            color: red;
-        }
-    </style>
-</head>
-<body>
-    <h1>
-        <a href="/">User Sign Up</a>
-    </h1>
+    <head>
+       <title>User Sign-Up</title>
+    <body>
 """
 
-# html boilerplate for the bottom of every page
 page_footer = """
-</body>
+    </body>
 </html>
 """
+signup_form = """
+<h1><a href="/">User Sign Up</a></h1>
+<form action="/welcome" method="post" >
+    <table>
+        <tr>
+            <td><label for="username"> Username:</label> </td>
+            <td><input name="username" type="text" value="{0}"></td>
+            <td style="color: red;"> {1} </td>
+        </tr>
+        
+        <tr>
+            <td><label for="password"> Password: </label></td>
+            <td><input name="password" type="password"> </td>
+            <td style="color: red;"> {2} </td>
+        </tr>
+        
+        <tr>
+            <td><label for="valid_pw"> Confirm Password:</label></td>
+            <td><input name="valid_pw" type="password"> </td>
+            <td style="color: red;"> {3} </td>
+        </tr>
+        
+        <tr>
+            <td><label for="email"> Email (optional):</label></td>
+            <td><input name="email" type="text"> </td>
+            <td style="color: red;"> {4} </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><input type="submit" value="Sign Up!"/></td>
+        </tr>
+    </table>
+</form>
+"""
 
-USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
+
 def valid_username(username):
-    return username and USER_RE.match(username)
+    valid = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
+    return valid.match(username)
 
-PASS_RE = re.compile(r"^.{3,20}$")
-def valid_password(password):
-    return password and PASS_RE.match(password)
-
-EMAIL_RE  = re.compile(r'^[\S]+@[\S]+\.[\S]+$')
 def valid_email(email):
-    return not email or EMAIL_RE.match(email)
+    valid = re.compile(r"^[\S]+@[\S]+.[\S]+$")
+    return valid.match(email)
 
+def valid_password(password):
+    valid = re.compile(r"^.{3,20}$")
+    return valid.match(password)
 
 class Index(webapp2.RequestHandler):
-    """ Handles requests coming in to '/' (the root of our site)
-    """
-
+    ''' handles requests for main index page '''
     def get(self):
+        un_error = self.request.get('un_error')
+        username = self.request.get('username')
+        un_error_element = username + '<p class="error">' + un_error + "</p>" if un_error else ""
 
-        edit_header = "<h3>To register, fill out the forms below. </h3>"
+        
+        pw_error = self.request.get('pw_error')
+        pw_error_element = '<p class="error">' + pw_error + "</p>" if pw_error else ""
+        
+        vaildpw_error = self.request.get('vaildpw_error')
+        vaildpw_error_element = '<p class="error">' + vaildpw_error + "</p>" if vaildpw_error else ""
+        
+        email_error = self.request.get('email_error')
+        email_error_element = '<p class="error">' + email_error + "</p>" if email_error else ""
+        
+        self.response.write(page_header + signup_form.format(username, un_error, pw_error, vaildpw_error, email_error) \
+                            + page_footer)
 
-        # a form for adding new movies
-        username = """
-        <form action="/signup" method="post">
-            <label>
-                Username
-                <input type="text" name="username" value=""/>
-            </label>
-        </form>
-        """
-
-        # a form for crossing off movies
-        # (first we build a dropdown from the current watchlist items)
-        # crossoff_options = ""
-        # for movie in getCurrentWatchlist():
-        #     crossoff_options += '<option value="{0}">{0}</option>'.format(movie)
-
-        password = """
-        <form action="/password" method="post">
-            <label>
-                Password
-                <input type="password" name="password" value=""/>
-            </label>
-        </form>
-        """
-
-        verify = """
-        <form action="/password" method="post">
-            <label>
-                Re-Enter Password
-                <input type="password" name="verify" value=""/>
-            </label>
-        </form>
-        """
-
-        email = """
-        <form action="/" method="post">
-            <label>
-                Email (optional)
-                <input type="text" name="email" value=""/>
-            </label>
-            	<br>
-                <input type="submit" value="Submit"/>
-        </form>
-        """
-
-        # if we have an error, make a <p> to display it
-        error = self.request.get("error")
-        if error:
-            error_element = "<p class='error'>" + cgi.escape(error, quote=True) + "</p>"
-        else:
-            error_element = ""
-
-        # create the page
-        main_content =  edit_header + username + password + verify + email + error_element
-        content = page_header + main_content + page_footer
-        self.response.write(content)
-
+class Welcome(webapp2.RequestHandler):
+    ''' handles requests for welcome success page '''
     def post(self):
+        error = ""
         username = self.request.get('username')
         password = self.request.get('password')
-        verify = self.request.get('verify')
+        valid_pw = self.request.get('valid_pw')
         email = self.request.get('email')
-
+        
         if not valid_username(username):
-            error_username = "Your username is not vaild, please try again."
-            self.redirect("/?error=" + error_username)
+            error += "un_error=Invalid Username"
+            
+        if not valid_password(password):
+            if error != "":
+                error += "&"
+            error += "pw_error=Invalid Password"
+        
+        if not password == valid_pw:
+            if error != "":
+                error += "&"
+            error += "vaildpw_error=Passwords do not match"
+        
+        if email: 
+            if not valid_email(email):
+                if error != "":
+                    error += "&"
+                error += "email_error=Invalid Email"
 
-        # if not valid_password(password):
-        #     error_password = "That wasn't a valid password."
-        #     self.redirect("/?error=" + error_password)
-
-        # elif password != verify:
-        #     error_verify = "Your passwords didn't match."
-        #     self.redirect("/?error=" + error_verify)
-
-        if not valid_email(email):
-            error_email = "That's not a valid email."
-            self.redirect("/?error=" + error_email)
-           
-        sentence = "Welcome!" + username
-        content = page_header + "<p>" + sentence + "</p>" + page_footer
-        self.response.write(content)
-
+        username = cgi.escape(username)
+        password = cgi.escape(password)
+        valid_pw = cgi.escape(valid_pw)
+        email = cgi.escape(email)
+        
+        if error != "":
+            self.redirect("/?" + error)
+        
+        self.response.write(page_header + "Welcome to the other side, {}".format(username) + "!" + page_footer)
+              
 
 app = webapp2.WSGIApplication([
     ('/', Index),
-    # ('/signup', Signup),
-    # ('/welcome', Welcome)
+    ('/welcome', Welcome)
 ], debug=True)
