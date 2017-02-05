@@ -128,17 +128,12 @@ class MainHandler(webapp2.RequestHandler):
             # make a helpful error message
             values['password_error'] = "Please enter valid password"
             have_error = True
-
-        if not valid_password(verify):
+            
+        if verify != password:
+            values['password'] = ''
             values['verify'] = ''
-            values['verify_error'] = "Please enter valid password"
+            values['verify_error'] = "Passwords do not match."
             have_error = True
-        else:
-            if verify != password:
-                values['password'] = ''
-                values['verify'] = ''
-                values['verify_error'] = "Verify password doesn't match password"
-                have_error = True
 
         if (not email.isspace()) and (email.strip() != ""):
             if not valid_email(email):
